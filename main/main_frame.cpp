@@ -82,6 +82,14 @@ MainFrame::MainFrame(wxWindow* parent, wxWindowID id, const wxString& title, con
 	Bind(wxEVT_TOOL, &MainFrame::Copy, this, ToolbarID::COPY);
 	Bind(wxEVT_TOOL, &MainFrame::Find, this, ToolbarID::FIND);
 
+	//Logger init
+
+	file_logger = spdlog::basic_logger_mt("file_logger", "events.log");
+	file_logger->set_pattern("*** [%H:%M:%S %z] [source %g %!] [thread %t] %v ***");
+
+	console_logger = spdlog::stdout_color_mt("console");
+	console_logger->set_pattern("*** [%H:%M:%S %z] [source %g %!] [thread %t] %v ***");
+
 }
 
 MainFrame::~MainFrame() {
@@ -103,6 +111,8 @@ std::filesystem::path MainFrame::GetCurrentDirectoryFromList(wxListCtrl* List) {
  * The sort type is selected based on the column number. 
  */
 void MainFrame::Sort(wxListEvent& event) {
+	file_logger->log(spdlog::level::info, "Sorting file list");
+
 	wxListCtrl* list;
 	std::filesystem::path directory;
 	SortType sortType = SortType::Default;
@@ -136,6 +146,8 @@ void MainFrame::Sort(wxListEvent& event) {
 *  If no SortType is specified it sorts it by directories first.
 */
 void MainFrame::SetFileWindow(std::filesystem::path directory, wxListCtrl* windowList, SortType SortBy) {
+	file_logger->log(spdlog::level::info, "Showing directory " + directory.string() + "to list.");
+
 	if (windowList->GetId() == WindowID::left_files) {
 		left_list_directory = directory;
 	}
@@ -289,10 +301,15 @@ void MainFrame::SetWorkingWindow(wxListEvent& event) {
 /** Event handler for delete operation.
 */
 void MainFrame::Delete(wxCommandEvent& event) {
+	file_logger->log(spdlog::level::info, "Deleting file/s");
+
 	long selectedItem = working_list->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
 	while (selectedItem != -1)
 	{
 		std::filesystem::path path = *static_cast<std::filesystem::path*>(wxUIntToPtr(working_list->GetItemData(selectedItem)));
+
+		file_logger->log(spdlog::level::info, "Filename: " + path.filename().string());
+
 		try {
 			Files::removeFile(path);
 		}	
@@ -307,6 +324,8 @@ void MainFrame::Delete(wxCommandEvent& event) {
 /** Event handler for rename operation.
 */
 void MainFrame::Rename(wxCommandEvent& event) {
+	file_logger->log(spdlog::level::info, "Renaming file");
+
 	if (working_list->GetSelectedItemCount() > 1) {
 		wxMessageBox("Select only one file to rename.");
 		return;
@@ -319,6 +338,10 @@ void MainFrame::Rename(wxCommandEvent& event) {
 	textDialog->ShowModal();
 
 	std::string newName = textDialog->GetValue().ToStdString();
+
+	file_logger->log(spdlog::level::info, "Old filename: " + filePath.filename().string());
+	file_logger->log(spdlog::level::info, "New filename: " + newName);
+
 	if (newName != oldName) {
 		try {
 			Files::renameFile(newName, filePath);
@@ -333,12 +356,17 @@ void MainFrame::Rename(wxCommandEvent& event) {
 /** Event handler for move operation.
 */
 void MainFrame::Move(wxCommandEvent& event) {
+	file_logger->log(spdlog::level::info, "Moving file/s");
+
 	long selectedItem = working_list->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
 	while (selectedItem != -1)
 	{
 		wxListCtrl* destinationList = (working_list->GetId() == WindowID::left_files) ? right_files : left_files;
 		std::filesystem::path filePath = *static_cast<std::filesystem::path*>(wxUIntToPtr(working_list->GetItemData(selectedItem)));
 		std::filesystem::path destination = GetCurrentDirectoryFromList(destinationList);
+
+		file_logger->log(spdlog::level::info, "Filename: " + filePath.filename().string());
+		file_logger->log(spdlog::level::info, "Moving to: " + destination.string());
 
 		if (filePath.parent_path() != destination) {
 			try {
@@ -356,12 +384,18 @@ void MainFrame::Move(wxCommandEvent& event) {
 /** Event handler for add operation.
 */
 void MainFrame::Add(wxCommandEvent& event) {
+	file_logger->log(spdlog::level::info, "Adding directory");
+
 	auto destination = GetCurrentDirectoryFromList(left_files);
 
 	textDialog = new wxTextEntryDialog(this, "Enter new directory name", "", "New directory");
 	textDialog->ShowModal();
 
 	std::string newName = textDialog->GetValue().ToStdString();
+
+	file_logger->log(spdlog::level::info, "Directory path: " + destination.string());
+	file_logger->log(spdlog::level::info, "Directory name: " + newName);
+
 	try {
 		Files::addDirectory(newName, destination);
 	}
@@ -374,12 +408,18 @@ void MainFrame::Add(wxCommandEvent& event) {
 /** Event handler for copy operation.
 */
 void MainFrame::Copy(wxCommandEvent& event) {
+	file_logger->log(spdlog::level::info, "Copying files");
+
 	long selectedItem = working_list->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
 	while (selectedItem != -1)
 	{
 		wxListCtrl* destinationList = (working_list->GetId() == WindowID::left_files) ? right_files : left_files;
 		std::filesystem::path filePath = *static_cast<std::filesystem::path*>(wxUIntToPtr(working_list->GetItemData(selectedItem)));
 		std::filesystem::path destination = GetCurrentDirectoryFromList(destinationList);
+
+		file_logger->log(spdlog::level::info, "Filename: " + filePath.filename().string());
+		file_logger->log(spdlog::level::info, "Copying to: " + destination.string());
+
 		if (filePath.parent_path() != destination) {
 			try {
 				Files::copyFile(filePath, destination);
@@ -396,9 +436,13 @@ void MainFrame::Copy(wxCommandEvent& event) {
 /** Event handler for find operation.
 */
 void MainFrame::Find(wxCommandEvent& event) {
+	file_logger->log(spdlog::level::info, "Finding file");
+
 	textDialog = new wxTextEntryDialog(this, "Find file:", "", "");
 	textDialog->ShowModal();
 	std::string filename = textDialog->GetValue().ToStdString();
+
+	file_logger->log(spdlog::level::info, "Filename: " + filename);
 
 	std::vector<file_specifics> files = Files::findFile(filename, Files::getRootDirectory());
 
@@ -413,6 +457,8 @@ void MainFrame::Find(wxCommandEvent& event) {
 /** Refreshes both wxCtrlList by showing the same directory once more.
 */
 void MainFrame::RefreshFileWindows() {
+	file_logger->log(spdlog::level::info, "Refreshing both file lists");
+
 	auto path = GetCurrentDirectoryFromList(left_files);
 	SetFileWindow(path, left_files);
 
@@ -423,5 +469,7 @@ void MainFrame::RefreshFileWindows() {
 /** Shows error message.
 */
 void MainFrame::WriteErrorMessage(std::string message) {
+	console_logger->log(spdlog::level::err, "Error occured: " + message);
+	file_logger->log(spdlog::level::err, "Error occured: " + message);
 	wxMessageBox(message, "Error occured");
 }

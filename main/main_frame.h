@@ -2,6 +2,9 @@
 #include "file_manager.h"
 #include <wx/textdlg.h>
 #include <wx/msgdlg.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 enum MenuID { Add = 2000, Rename, Remove, Move, Copy };
 enum ToolbarID { ADD = 3000, RENAME, REMOVE, MOVE, COPY, FIND };
@@ -16,6 +19,8 @@ private:
 	wxImageList* image_list;
 	std::filesystem::path GetCurrentDirectoryFromList(wxListCtrl* List);
 	void WriteErrorMessage(std::string);
+	std::shared_ptr<spdlog::logger> file_logger;
+	std::shared_ptr<spdlog::logger> console_logger;
 public:
 	MainFrame(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(1000, 800), long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
 	~MainFrame();
