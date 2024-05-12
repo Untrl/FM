@@ -1,0 +1,37 @@
+cmake_minimum_required(VERSION 3.20)
+#Převzáno z WxWidgets CMake
+if(NOT CMAKE_CONFIGURATION_TYPES)
+    get_property(HAVE_MULTI_CONFIG_GENERATOR GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+    if(HAVE_MULTI_CONFIG_GENERATOR)
+        set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
+    endif()
+endif()
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(default_build_type "Release")
+    message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
+    set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE STRING "Choose the type of build." FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
+endif()
+#
+project(FM)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(wxLANGUAGES C CXX)
+set(wxBUILD_SHARED OFF)
+set(wxUSE_LIBTIFF OFF)
+
+if (WIN32)
+    set(SUBSYSTEM_LINKER_OPTIONS "/SUBSYSTEM:WINDOWS")
+    add_subdirectory(libs/win/wxWidgets)
+    add_subdirectory(libs/win/spdlog)
+endif()
+if (UNIX)
+   add_subdirectory(libs/linux/wxWidgets)
+endif (UNIX)
+
+add_executable(FM "main.cpp" "main/file_manager.h" "main/file_manager.cpp" "main/main_frame.h" "main/main_frame.cpp" "gui/main_frame_template.h" "gui/main_frame_template.cpp" )
+target_link_libraries(FM PUBLIC wx::net wx::core wx::base)
+target_link_libraries(FM PRIVATE spdlog::spdlog)
+target_link_options(FM PRIVATE ${SUBSYSTEM_LINKER_OPTIONS})
