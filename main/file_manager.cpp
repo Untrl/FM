@@ -18,8 +18,6 @@ file_specifics::file_specifics(std::filesystem::path file) {
 	permissions = filesystem::status(file).permissions();
 }
 
-/** Converts perms to string.
-*/
 std::string file_specifics::getPerms() {
 	string perms;
 	perms += (filesystem::perms::owner_read & permissions) != filesystem::perms::none ? 'r' : '-';
@@ -34,8 +32,6 @@ std::string file_specifics::getPerms() {
 	return perms;
 }
 
-/** Converts file_time_type to string.
-*/
 std::string file_specifics::getLastWriteTime() {
 	// Source: Guldrak (https://github.com/gulrak)
 	// Rewrite to std::format, when gcc fully supports it
@@ -49,8 +45,6 @@ std::string file_specifics::getLastWriteTime() {
 	return buffer.str();
 }
 
-/** Converts file_size(uintmax_t) to string.
-*/
 std::string file_specifics::getFileSize() {
 	if (!fileSizeAccesible) {
 		return " ";
@@ -85,8 +79,6 @@ std::string file_specifics::getFileSize() {
 	return result;
 }
 
-/** Creates file specifications for given directory.
-*/
 vector<file_specifics> Files::getContentOfDirectory(std::filesystem::path directory) {
 	vector<file_specifics> ContentOfDirectory;
 	if (filesystem::is_directory(directory)) {
@@ -98,9 +90,6 @@ vector<file_specifics> Files::getContentOfDirectory(std::filesystem::path direct
 	return ContentOfDirectory;
 }
 
-/** Iterates from given root and matches filenames of all files with given filename. Matches only if the filenames are identical.
-* Returns all files which meet the condition. 
-*/
 std::vector<file_specifics> Files::findFile(std::string filename, std::filesystem::path root) {
 	std::vector<file_specifics> files;
 	try {
@@ -117,8 +106,6 @@ std::vector<file_specifics> Files::findFile(std::string filename, std::filesyste
 	return files;
 }
 
-/** Returns root directory. OS specific.
-*/
 std::filesystem::path Files::getRootDirectory() {
 #ifdef __linux__ 
 	return std::filesystem::path("/");
@@ -139,8 +126,6 @@ std::filesystem::path Files::getRootDirectory() {
 #endif
 }
 
-/** Opens given file with preferred aplications.
-*/
 void Files::openFile(std::filesystem::path filePath) {
 #ifdef __linux__ 
 	/* Could not find working solution for linux, but here is the closes one:
@@ -180,15 +165,11 @@ void Files::copyFile(std::filesystem::path filePath, std::filesystem::path desti
 	std::filesystem::copy(filePath, destination, std::filesystem::copy_options::recursive);
 }
 
-/** Compares strings.
-*/
 bool Files::contains(std::string string, std::string searching) {
 	size_t pos = string.find(searching);
 	return (pos != std::string::npos);
 }
 
-/** Sorts given files by directories first then all the other files. Used as the default sort.
-*/
 std::vector<file_specifics> Files::SortByDirectories(std::vector<file_specifics> files, bool reversed) {
 	std::vector<file_specifics> sorted;
 	std::vector<file_specifics> other;
@@ -209,8 +190,6 @@ std::vector<file_specifics> Files::SortByDirectories(std::vector<file_specifics>
 	return sorted;
 }
 
-/** Sorts given files by filenames.
-*/
 std::vector<file_specifics> Files::SortByName(std::vector<file_specifics> files, bool reversed) {
 	auto sorted = std::vector<file_specifics>(files.size());
 	std::vector<std::string> sortedFilenames;
@@ -236,8 +215,6 @@ std::vector<file_specifics> Files::SortByName(std::vector<file_specifics> files,
 	return sorted;
 }
 
-/** Sorts given files by date. Last date first.
-*/
 std::vector<file_specifics> Files::SortByDate(std::vector<file_specifics> files, bool reversed) {
 	auto sorted = std::vector<file_specifics>(files.size());
 	auto usedIndexes = std::vector<bool>(files.size());
@@ -265,8 +242,6 @@ std::vector<file_specifics> Files::SortByDate(std::vector<file_specifics> files,
 	return sorted;
 }
 
-/** Sorts given files by size. Largest file size first.
-*/
 std::vector<file_specifics> Files::SortBySize(std::vector<file_specifics> files, bool reversed) {
 	auto sorted = std::vector<file_specifics>(files.size());
 	auto usedIndexes = std::vector<bool>(files.size());
